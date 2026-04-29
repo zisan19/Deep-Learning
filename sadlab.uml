@@ -1,0 +1,322 @@
+@startuml
+skinparam plantumlServer https://www.plantuml.com/plantuml
+title INVENTRA - Comprehensive Class Diagram
+B2B Purchasing & Inventory Management System
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #222222
+}
+skinparam package {
+    BackgroundColor #F8F8F8
+    BorderColor #555555
+}
+
+'========================
+' ENUMS
+'========================
+
+enum Role {
+    MANUFACTURER
+    SHOP
+    ADMIN
+}
+
+enum OrderStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    DELIVERED
+    COMPLETED
+    CANCELLED
+}
+
+enum PaymentType {
+    FULL_PAYMENT
+    DOWN_PAYMENT
+    INSTALLMENT
+}
+
+enum PaymentStatus {
+    UNPAID
+    PARTIAL
+    PAID
+    OVERDUE
+    FAILED
+}
+
+'========================
+' USER CLASSES
+'========================
+
+abstract class User {
+    -userId: String
+    -name: String
+    -email: String
+    -password: String
+    -phone: String
+    -role: Role
+    -createdAt: DateTime
+    +register(): Boolean
+    +login(): Boolean
+    +logout(): void
+    +updateProfile(): void
+}
+
+class Manufacturer {
+    -manufacturerId: String
+    -companyName: String
+    -businessLicense: String
+    -address: String
+    +addProduct(): Product
+    +updateProduct(): void
+    +manageStock(): void
+    +approveOrder(): void
+    +rejectOrder(): void
+}
+
+class Shop {
+    -shopId: String
+    -shopName: String
+    -ownerName: String
+    -address: String
+    +browseProducts(): List<Product>
+    +placeOrder(): PurchaseOrder
+    +trackOrder(): OrderStatus
+    +confirmReceived(): void
+}
+
+class Admin {
+    -adminId: String
+    -designation: String
+    +manageUsers(): void
+    +monitorSystem(): void
+    +viewReports(): void
+}
+
+'========================
+' PRODUCT AND INVENTORY
+'========================
+
+class Category {
+    -categoryId: String
+    -categoryName: String
+    -description: String
+    +addCategory(): void
+    +updateCategory(): void
+}
+
+class Product {
+    -productId: String
+    -productName: String
+    -description: String
+    -unitPrice: double
+    -minimumOrderQuantity: int
+    -status: String
+    +updateDetails(): void
+    +changePrice(): void
+    +checkAvailability(): Boolean
+}
+
+class Inventory {
+    -inventoryId: String
+    -quantityAvailable: int
+    -reservedQuantity: int
+    -reorderLevel: int
+    -lastUpdated: DateTime
+    +increaseStock(qty: int): void
+    +decreaseStock(qty: int): void
+    +checkLowStock(): Boolean
+    +syncInventory(): void
+}
+
+class LowStockAlert {
+    -alertId: String
+    -currentQuantity: int
+    -thresholdQuantity: int
+    -alertDate: DateTime
+    -status: String
+    +generateAlert(): void
+    +resolveAlert(): void
+}
+
+'========================
+' ORDER CLASSES
+'========================
+
+class PurchaseOrder {
+    -orderId: String
+    -orderDate: DateTime
+    -status: OrderStatus
+    -subtotal: double
+    -discountAmount: double
+    -totalAmount: double
+    +submitOrder(): void
+    +calculateTotal(): double
+    +approve(): void
+    +reject(): void
+    +cancel(): void
+    +markCompleted(): void
+}
+
+class OrderItem {
+    -orderItemId: String
+    -quantity: int
+    -unitPrice: double
+    -lineTotal: double
+    +calculateLineTotal(): double
+}
+
+class BulkDiscountRule {
+    -ruleId: String
+    -minimumQuantity: int
+    -minimumOrderValue: double
+    -discountPercentage: double
+    -isActive: Boolean
+    +calculateDiscount(): double
+    +activateRule(): void
+    +deactivateRule(): void
+}
+
+'========================
+' PAYMENT CLASSES
+'========================
+
+class PaymentPlan {
+    -paymentPlanId: String
+    -paymentType: PaymentType
+    -totalAmount: double
+    -downPayment: double
+    -remainingAmount: double
+    -status: PaymentStatus
+    +createPlan(): void
+    +updatePaymentStatus(): void
+    +calculateDueAmount(): double
+}
+
+class Installment {
+    -installmentId: String
+    -installmentNo: int
+    -amountDue: double
+    -dueDate: DateTime
+    -paidDate: DateTime
+    -status: PaymentStatus
+    +markAsPaid(): void
+    +checkOverdue(): Boolean
+}
+
+class PaymentTransaction {
+    -transactionId: String
+    -amount: double
+    -paymentMethod: String
+    -transactionDate: DateTime
+    -status: PaymentStatus
+    +processPayment(): Boolean
+    +refundPayment(): Boolean
+}
+
+'========================
+' NOTIFICATION AND REPORT
+'========================
+
+class Notification {
+    -notificationId: String
+    -message: String
+    -type: String
+    -sentAt: DateTime
+    -isRead: Boolean
+    +sendNotification(): void
+    +markAsRead(): void
+}
+
+class AnalyticsReport {
+    -reportId: String
+    -reportType: String
+    -generatedDate: DateTime
+    +generateSalesReport(): void
+    +generatePurchaseReport(): void
+    +generateStockReport(): void
+}
+
+'========================
+' SERVICES
+'========================
+
+class AuthService {
+    +registerUser(): User
+    +loginUser(): Boolean
+    +verifyRole(): Boolean
+}
+
+class OrderService {
+    +createOrder(): PurchaseOrder
+    +validateOrder(): Boolean
+    +trackOrder(): OrderStatus
+}
+
+class InventoryService {
+    +checkStock(): Boolean
+    +updateManufacturerInventory(): void
+    +updateShopInventory(): void
+    +generateLowStockAlert(): void
+}
+
+class PaymentService {
+    +createPaymentPlan(): PaymentPlan
+    +recordPayment(): PaymentTransaction
+    +sendPaymentReminder(): void
+}
+
+class NotificationService {
+    +sendOrderNotification(): void
+    +sendLowStockNotification(): void
+    +sendPaymentReminder(): void
+}
+
+'========================
+' RELATIONSHIPS
+'========================
+
+' Inheritance / Generalization
+User <|-- Manufacturer
+User <|-- Shop
+User <|-- Admin
+
+' Association
+Manufacturer "1" -- "0..*" Product : lists >
+Shop "1" -- "0..*" PurchaseOrder : places >
+Manufacturer "1" -- "0..*" PurchaseOrder : receives >
+Notification "*" -- "1" User : sent to >
+
+' Aggregation
+Category "1" o-- "0..*" Product : groups >
+
+' Composition
+Product "1" *-- "1" Inventory : has >
+PurchaseOrder "1" *-- "1..*" OrderItem : contains >
+PurchaseOrder "1" *-- "1" PaymentPlan : has >
+PaymentPlan "1" *-- "0..*" Installment : contains >
+PaymentPlan "1" *-- "0..*" PaymentTransaction : records >
+
+' Association
+OrderItem "*" --> "1" Product : refers to >
+Inventory "1" -- "0..*" LowStockAlert : creates >
+Manufacturer "1" -- "0..*" BulkDiscountRule : configures >
+BulkDiscountRule "0..*" --> "0..*" Product : applies to >
+AnalyticsReport "*" --> "1" User : generated for >
+
+' Dependencies
+AuthService ..> User : authenticates
+OrderService ..> PurchaseOrder : manages
+OrderService ..> InventoryService : checks stock
+OrderService ..> PaymentService : creates payment plan
+OrderService ..> NotificationService : sends order alert
+InventoryService ..> Inventory : updates
+InventoryService ..> LowStockAlert : generates
+PaymentService ..> PaymentPlan : manages
+PaymentService ..> PaymentTransaction : records
+NotificationService ..> Notification : creates
+
+@enduml
